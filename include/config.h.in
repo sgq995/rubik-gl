@@ -1,0 +1,7 @@
+#ifndef CONFIG_H_
+#define CONFIG_H_
+
+#define RUBIKGL_VERSION_MAJOR @RubikGL_VERSION_MAJOR@
+#define RUBIKGL_VERSION_MINOR @RubikGL_VERSION_MINOR@
+
+#endif  // CONFIG_H_
