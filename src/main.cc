@@ -1,17 +1,21 @@
 #include <iostream>
 
-#include "SDL.h"
+#include <GL/glew.h>
+
+#include <SDL.h>
 
 #include "config.h"
 
+#include "renderer.h"
+#include "window.h"
+
 #define PRINT_ERROR_MESSAGE(msg) \
-    std::cout << msg << " failed: " << SDL_GetError() << std::endl
+    std::cerr << msg << " failed: " << SDL_GetError() << std::endl
 
 enum return_code {
   OK,
   ERR_SDL_INIT,
-  ERR_SDL_CREATE_WINDOW,
-  ERR_SDL_CREATE_RENDERER,
+  ERR_GLEW_INIT,
 };
 
 int main(int argc, char **argv) {
@@ -21,36 +25,28 @@ int main(int argc, char **argv) {
     return ERR_SDL_INIT;
   }
 
-  SDL_Window *window = SDL_CreateWindow("RubikGL",
-      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-      800, 600, 
-      SDL_WINDOW_OPENGL);
-  if (window == NULL) {
-    PRINT_ERROR_MESSAGE("SDL_CreateWindow");
-    return ERR_SDL_CREATE_WINDOW;
-  }
+  {
+    Window::Properties properties = {
+      .title = "RubikGL", 
+      .x = SDL_WINDOWPOS_CENTERED,
+      .y = SDL_WINDOWPOS_CENTERED,
+      .width = 800,
+      .height = 600,
+    };
+    Window window(properties);
 
-  SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-  if (renderer == NULL) {
-    PRINT_ERROR_MESSAGE("SDL_CreateRenderer");
-    return ERR_SDL_CREATE_RENDERER;
-  }
+    SDL_Event event;
 
-  SDL_Event event;
-
-  while (true) {
-    if (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT) {
-        break;
+    while (true) {
+      if (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+          break;
+        }
       }
+
+      window.Render();
     }
-
-    SDL_RenderClear(renderer);
-
-    SDL_RenderPresent(renderer);
   }
-
-  SDL_DestroyWindow(window);
 
   SDL_Quit();
 

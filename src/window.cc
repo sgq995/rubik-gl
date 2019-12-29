@@ -8,9 +8,9 @@ Window::Window(const Window::Properties &properties) {
   SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, 32);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-  window_ = SDL_CreateWindow("RubikGL",
-      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-      800, 600, 
+  window_ = SDL_CreateWindow(properties.title.c_str(),
+      properties.x, properties.y,
+      properties.width, properties.height, 
       SDL_WINDOW_OPENGL);
 
   renderer_.Create(window_);
