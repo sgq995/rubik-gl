@@ -11,7 +11,9 @@ find_package(SDL2 REQUIRED)
 
 configure_file(include/config.h.in include/config.h)
 
-add_executable(RubikGL src/main.cc)
+file(GLOB_RECURSE SOURCES RELATIVE ${PROJECT_SOURCE_DIR} "src/*.cc")
+
+add_executable(RubikGL ${SOURCES})
 
 if (ARCHLINUX_BUILD)
   target_link_libraries(RubikGL PUBLIC SDL2::SDL2)
@@ -21,3 +23,4 @@ else()
 endif()
 
 target_include_directories(RubikGL PUBLIC "${PROJECT_BINARY_DIR}/include")
+target_include_directories(RubikGL PUBLIC "${PROJECT_SOURCE_DIR}/include")
