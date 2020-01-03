@@ -4,43 +4,18 @@
 
 #include <GL/glew.h>
 
-static GLuint program_id;
+#include "shader_object_pool.h"
+
 static GLint vertex_pos_location = -1;
 static GLuint vertex_buffer_object = 0;
 static GLuint index_buffer_object = 0;
 
-static GLuint loadShader(GLenum type, const GLchar *source) {
-  GLuint shader = glCreateShader(type);
-  if (shader == 0) {
-    return 0;
-  }
-
-  glShaderSource(shader, 1, &source, NULL);
-  glCompileShader(shader);
-
-  GLint compile_status;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
-  if (compile_status == GL_TRUE) {
-    return shader;
-  } else {
-    GLint size;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &size);
-
-    GLchar *log = new GLchar[size];
-    glGetShaderInfoLog(shader, size, NULL, log);
-    std::cerr << "GL shader failed: " << log << std::endl;
-    delete[] log;
-    
-    glDeleteShader(shader);
-    return 0;
-  }
-}
-
 Renderer::Renderer() {
-  
+
 }
 
 Renderer::~Renderer() {
+  delete shader_;
   Destroy();
 }
 
@@ -57,29 +32,37 @@ bool Renderer::Create(SDL_Window *window) {
     return false;
   }
 
+  shader_ = new Shader();
+
+  ShaderObjectPool object_pool;
+  ShaderSource source;
+
   const GLchar *vertex_shader_source = ""
       "attribute vec4 aVertexPosition;"
       "void main() {"
         "gl_Position = aVertexPosition;"
       "}";
-  GLuint vertex_shader = loadShader(GL_VERTEX_SHADER, vertex_shader_source);
+  source.type = GL_VERTEX_SHADER;
+  source.code = vertex_shader_source;
+  object_pool.Compile("vertex", source);
 
   const GLchar *fragment_shader_source = ""
       "void main() {"
         "gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);"
       "}";
-  GLuint fragment_shader = loadShader(GL_FRAGMENT_SHADER, fragment_shader_source);
+  source.type = GL_FRAGMENT_SHADER;
+  source.code = fragment_shader_source;
+  object_pool.Compile(source);
 
-  program_id = glCreateProgram();
-  glAttachShader(program_id, vertex_shader);
-  glAttachShader(program_id, fragment_shader);
+  const ShaderObject vertex_object = object_pool.Get("vertex");
+  shader_->Attach(vertex_object);
+
+  std::string fragment_key(static_cast<const char *>(fragment_shader_source));
+  const ShaderObject fragment_object = object_pool.Get(fragment_key);
+  shader_->Attach(fragment_object);
   
-  glLinkProgram(program_id);
-
-  GLint link_status;
-  glGetProgramiv(program_id, GL_LINK_STATUS, &link_status);
-  if (link_status == GL_TRUE) {
-    vertex_pos_location = glGetAttribLocation(program_id, "aVertexPosition");
+  if (shader_->Link()) {
+    vertex_pos_location = glGetAttribLocation(shader_->program(), "aVertexPosition");
 
     GLfloat vertex_data[8] = {
       -0.5f, -0.5f,
@@ -99,20 +82,6 @@ bool Renderer::Create(SDL_Window *window) {
     glGenBuffers(1, &index_buffer_object);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_object);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
-  } else {
-    GLint size;
-    glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &size);
-
-    GLchar *log = new GLchar[size];
-    glGetProgramInfoLog(program_id, size, NULL, log);
-    std::cerr << "GL program failed: " << log << std::endl;
-    delete[] log;
-
-    glDeleteProgram(program_id);
-    program_id = 0;
-
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
   }
 
   return true;
@@ -129,7 +98,7 @@ void Renderer::Clear() {
 }
 
 void Renderer::Render() {
-  glUseProgram(program_id);
+  shader_->Bind();
 
   glEnableVertexAttribArray(vertex_pos_location);
 
