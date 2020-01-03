@@ -8,7 +8,7 @@ ShaderObjectPool::ShaderObjectPool()
 }
 
 ShaderObjectPool::~ShaderObjectPool() {
-
+  Clear();
 }
 
 
@@ -56,6 +56,15 @@ bool ShaderObjectPool::Compile(const std::string& key, const ShaderSource& sourc
   return true;
 }
 
+
+const ShaderObject& ShaderObjectPool::Get(const ShaderSource& source) const {
+  return Get(source.code);
+}
+
+const ShaderObject& ShaderObjectPool::Get(const GLchar *code) const {
+  std::string key(static_cast<const char *>(code));
+  return Get(key);
+}
 
 const ShaderObject& ShaderObjectPool::Get(const std::string& key) const {
   if (cache_.find(key) != cache_.end()) {
