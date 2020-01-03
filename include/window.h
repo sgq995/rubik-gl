@@ -24,7 +24,8 @@ public:
     
     ~Window();
 
-    void Render();
+    void Update();
+    void Swap();
 
     const Renderer& renderer() const;
     // void set_renderer(Renderer&& renderer);

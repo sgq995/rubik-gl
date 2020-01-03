@@ -7,6 +7,8 @@
 #include "config.h"
 
 #include "renderer.h"
+#include "shader.h"
+#include "shader_object_pool.h"
 #include "window.h"
 
 #define PRINT_ERROR_MESSAGE(msg) \
@@ -17,6 +19,29 @@ enum return_code {
   ERR_SDL_INIT,
   ERR_GLEW_INIT,
 };
+
+static GLint vertex_position_location = -1;
+static GLint color_location = -1;
+static GLuint vertex_buffer_object = 0;
+static GLuint index_buffer_object = 0;
+
+#define ADJUST_DELTA(delta, val, max, min) \
+    ((val) > (max)) ? (-(delta)) : \
+    ((val) < (min)) ? (-(delta)) : \
+    (delta)
+
+#define OVERFLOW(val, max, min) \
+    ((val) > (max)) ? ((val) - (max) + (min)) : \
+    ((val) < (min)) ? ((max) - (val) + (min)) : \
+    (val)
+
+static float color_red = 0.5f;
+static float color_green = 0.3f;
+static float color_blue = 0.8f;
+
+static float color_red_delta = 0.05f;
+static float color_green_delta = 0.03f;
+static float color_blue_delta = 0.08f;
 
 int main(int argc, char **argv) {
   int status = SDL_Init(SDL_INIT_VIDEO);
@@ -34,6 +59,63 @@ int main(int argc, char **argv) {
       .height = 600,
     };
     Window window(properties);
+    const Renderer &renderer = window.renderer();
+
+    Shader shader;
+
+    {
+      ShaderObjectPool object_pool;
+      ShaderSource source;
+
+      const GLchar *vertex_shader_source = ""
+          "attribute vec4 aVertexPosition;"
+          "void main() {"
+            "gl_Position = aVertexPosition;"
+          "}";
+      source.type = GL_VERTEX_SHADER;
+      source.code = vertex_shader_source;
+      object_pool.Compile("vertex", source);
+
+      const GLchar *fragment_shader_source = ""
+          "uniform vec4 uColor;"
+          "void main() {"
+            "gl_FragColor = uColor;"
+          "}";
+      source.type = GL_FRAGMENT_SHADER;
+      source.code = fragment_shader_source;
+      object_pool.Compile(source);
+
+      const ShaderObject vertex_object = object_pool.Get("vertex");
+      shader.Attach(vertex_object);
+
+      const ShaderObject fragment_object = object_pool.Get(fragment_shader_source);
+      shader.Attach(fragment_object);
+      
+      if (shader.Link()) {
+        color_location = glGetUniformLocation(shader.program(), "uColor");
+
+        vertex_position_location = glGetAttribLocation(shader.program(), "aVertexPosition");
+
+        GLfloat vertex_data[8] = {
+          -0.5f, -0.5f,
+          0.5f, -0.5f,
+          0.5f, 0.5f,
+          -0.5f, 0.5f
+        };
+
+        glGenBuffers(1, &vertex_buffer_object);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+
+        GLuint index_data[6] = {
+          0, 1, 2, 0, 2, 3
+        };
+
+        glGenBuffers(1, &index_buffer_object);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_object);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
+      }
+    }
 
     SDL_Event event;
 
@@ -44,7 +126,40 @@ int main(int argc, char **argv) {
         }
       }
 
-      window.Render();
+      renderer.Clear();
+
+      shader.Bind();
+
+      color_red_delta = ADJUST_DELTA(color_red_delta, color_red, 1.0f, 0.0f);
+      // color_green_delta = ADJUST_DELTA(color_green_delta, color_green, 1.0f, 0.0f);
+      // color_blue_delta = ADJUST_DELTA(color_blue_delta, color_blue, 1.0f, 0.0f);
+
+      color_red = OVERFLOW(color_red + color_red_delta, 1.0f, 0.0f);
+      // color_green = OVERFLOW(color_green + color_green_delta, 1.0f, 0.0f);
+      // color_blue = OVERFLOW(color_blue + color_blue_delta, 1.0f, 0.0f);
+
+      glUniform4f(color_location, color_red, color_green, color_blue, 1.0f);
+
+      glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_object);
+
+      glEnableVertexAttribArray(vertex_position_location);
+
+      glVertexAttribPointer(vertex_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+      glDisableVertexAttribArray(vertex_position_location);
+
+      glUseProgram(0);
+
+      GLenum error = glGetError();
+      while (error != GL_NO_ERROR) {
+        std::cerr << "[OpenGL] Error code (" << error << ')' << std::endl;
+        error = glGetError();
+      }
+
+      window.Swap();
     }
   }
 

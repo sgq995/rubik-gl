@@ -3,8 +3,6 @@
 
 #include <SDL.h>
 
-#include "shader.h"
-
 class Renderer {
 public:
   Renderer();
@@ -17,13 +15,11 @@ public:
   bool Create(SDL_Window *window);
   void Destroy();
 
-  void Clear();
+  void Clear() const;
   void Render();
 
 private:
   SDL_GLContext gl_context_ = NULL;
-
-  Shader *shader_ = nullptr;
 };
 
 #endif  // RENDERER_H_

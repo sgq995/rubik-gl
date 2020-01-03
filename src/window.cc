@@ -1,5 +1,7 @@
 #include "window.h"
 
+#include <iostream>
+
 Window::Window(const Window::Properties &properties) {
   SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -23,10 +25,14 @@ Window::~Window() {
 }
 
 
-void Window::Render() {
+void Window::Update() {
   renderer_.Clear();
   renderer_.Render();
 
+  SDL_GL_SwapWindow(window_);
+}
+
+void Window::Swap() {
   SDL_GL_SwapWindow(window_);
 }
 
