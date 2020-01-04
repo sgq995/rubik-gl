@@ -52,11 +52,11 @@ int main(int argc, char **argv) {
 
   {
     Window window({
-      .title = "RubikGL", 
-      .x = SDL_WINDOWPOS_CENTERED,
-      .y = SDL_WINDOWPOS_CENTERED,
-      .width = 800,
-      .height = 600,
+        .title = "RubikGL", 
+        .x = SDL_WINDOWPOS_CENTERED,
+        .y = SDL_WINDOWPOS_CENTERED,
+        .width = 800,
+        .height = 600,
     });
     const Renderer &renderer = window.renderer();
 
@@ -108,19 +108,34 @@ int main(int argc, char **argv) {
       glBindVertexArray(vertex_array_object);
     }
 
-    Buffer vertex_buffer(GL_ARRAY_BUFFER, vertex_data, sizeof(vertex_data));
+    Buffer vertex_buffer({
+        .target = GL_ARRAY_BUFFER,
+        .type = GL_FLOAT,
+        .size = 2,
+    }, {
+        .data = vertex_data, 
+        .size = sizeof(vertex_data) 
+    });
 
     if (GLEW_VERSION_3_0) {
       vertex_buffer.Bind();
       glEnableVertexAttribArray(vertex_position_location);
-      glVertexAttribPointer(vertex_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+      // glVertexAttribPointer(vertex_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+      glVertexAttribPointer(vertex_position_location, vertex_buffer.size(), vertex_buffer.type(), GL_FALSE, 0, 0);
     }
     
     GLuint index_data[6] = {
       0, 1, 2, 0, 2, 3
     };
 
-    Buffer index_buffer(GL_ELEMENT_ARRAY_BUFFER, index_data, sizeof(index_data));
+    Buffer index_buffer({
+        .target = GL_ELEMENT_ARRAY_BUFFER,
+        .type = GL_UNSIGNED_INT,
+        .count = 6,
+    }, {
+        .data = index_data,
+        .size = sizeof(index_data),
+    });
 
     SDL_Event event;
 
@@ -154,7 +169,8 @@ int main(int argc, char **argv) {
       }
 
       index_buffer.Bind();
-      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+      // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+      glDrawElements(GL_TRIANGLES, index_buffer.count(), index_buffer.type(), NULL);
 
       if (GLEW_VERSION_3_0) {
         glBindVertexArray(0);

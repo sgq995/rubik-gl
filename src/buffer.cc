@@ -2,16 +2,16 @@
 
 #include <iostream>
 
-Buffer::Buffer(GLenum target, const GLvoid *data, GLsizeiptr size)
-    : Buffer(target, data, size, GL_STATIC_DRAW) {
+Buffer::Buffer(const Buffer::Properties &props, const Buffer::Pointer &pointer)
+    : Buffer(props, pointer, GL_STATIC_DRAW) {
 
 }
 
-Buffer::Buffer(GLenum target, const GLvoid *data, GLsizeiptr size, GLenum usage)
-    : kTarget_(target) {
+Buffer::Buffer(const Buffer::Properties &props, const Buffer::Pointer &pointer, GLenum usage)
+    : target_(props.target), type_(props.type), count_(props.count) {
   glGenBuffers(1, &object_);
-  glBindBuffer(kTarget_, object_);
-  glBufferData(kTarget_, size, data, usage);
+  glBindBuffer(target_, object_);
+  glBufferData(target_, pointer.size, pointer.data, usage);
 }
 
 Buffer::~Buffer() {
@@ -19,20 +19,22 @@ Buffer::~Buffer() {
 }
 
 
-void Buffer::Bind() {
-  glBindBuffer(kTarget_, object_);
-}
-
-void Buffer::DrawArrays(GLenum mode) {
-  glDrawArrays(mode, 0, count_);
-}
-
-void Buffer::DrawElements(GLenum mode) {
-  glDrawElements(mode, count_, type_, NULL);
+void Buffer::Bind() const {
+  glBindBuffer(target_, object_);
 }
 
 
-const GLsizei& Buffer::count() const {
+const GLenum& Buffer::target() const {
+  return target_;
+}
+
+
+const GLenum& Buffer::type() const {
+  return type_;
+}
+
+
+const GLsizei Buffer::count() const {
   return count_;
 }
 
@@ -41,10 +43,15 @@ void Buffer::set_count(const GLsizei &count) {
 }
 
 
-const GLenum& Buffer::type() const {
-  return type_;
+const GLint Buffer::size() const {
+  return size_;
 }
 
-void Buffer::set_type(const GLenum &type) {
-  type_ = type;
+void Buffer::set_size(const GLint &size) {
+  size_ = size;
+}
+
+
+const GLuint& Buffer::object() const {
+  return object_;
 }

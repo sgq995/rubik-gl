@@ -5,26 +5,49 @@
 
 class Buffer {
 public:
-  Buffer(GLenum target, const GLvoid *data, GLsizeiptr size);
-  Buffer(GLenum target, const GLvoid *data, GLsizeiptr size, GLenum usage);
+  struct Properties {
+    GLenum target;
+    GLenum type;
+
+    union {
+      GLsizei count;
+      GLint size;
+    };
+  };
+
+  struct Pointer {
+    const GLvoid *data;
+    GLsizeiptr size;
+  };
+
+  Buffer(const Buffer::Properties &props, const Buffer::Pointer &pointer);
+  Buffer(const Buffer::Properties &props, const Buffer::Pointer &pointer, GLenum usage);
   ~Buffer();
 
-  void Bind();
-  void DrawArrays(GLenum mode);
-  void DrawElements(GLenum mode);
+  void Bind() const;
 
-  const GLsizei& count() const;
-  void set_count(const GLsizei &count);
+  const GLenum& target() const;
 
   const GLenum& type() const;
-  void set_type(const GLenum &type);
+
+  const GLsizei count() const;
+  void set_count(const GLsizei &count);
+
+  const GLint size() const;
+  void set_size(const GLint &size);
+
+  const GLuint& object() const;
 
 private:
-  const GLenum kTarget_;
-  GLuint object_ = 0;
+  GLenum target_;
+  
+  GLenum type_;
+  union {
+    GLsizei count_;
+    GLint size_;
+  };
 
-  GLsizei count_ = 0;
-  GLenum type_ = GL_NONE;
+  GLuint object_ = 0;
 };
 
 #endif  // BUFFER_H_
