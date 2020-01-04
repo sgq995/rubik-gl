@@ -6,6 +6,7 @@
 
 #include "config.h"
 
+#include "buffer.h"
 #include "renderer.h"
 #include "shader.h"
 #include "shader_object_pool.h"
@@ -22,8 +23,7 @@ enum return_code {
 
 static GLint vertex_position_location = -1;
 static GLint color_location = -1;
-static GLuint vertex_buffer_object = 0;
-static GLuint index_buffer_object = 0;
+static GLuint vertex_array_object = 0;
 
 #define ADJUST_DELTA(delta, val, max, min) \
     ((val) > (max)) ? (-(delta)) : \
@@ -62,7 +62,6 @@ int main(int argc, char **argv) {
     const Renderer &renderer = window.renderer();
 
     Shader shader;
-
     {
       ShaderObjectPool object_pool;
       ShaderSource source;
@@ -95,27 +94,36 @@ int main(int argc, char **argv) {
         color_location = glGetUniformLocation(shader.program(), "uColor");
 
         vertex_position_location = glGetAttribLocation(shader.program(), "aVertexPosition");
-
-        GLfloat vertex_data[8] = {
-          -0.5f, -0.5f,
-          0.5f, -0.5f,
-          0.5f, 0.5f,
-          -0.5f, 0.5f
-        };
-
-        glGenBuffers(1, &vertex_buffer_object);
-        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
-
-        GLuint index_data[6] = {
-          0, 1, 2, 0, 2, 3
-        };
-
-        glGenBuffers(1, &index_buffer_object);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_object);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
       }
     }
+
+    GLfloat vertex_data[8] = {
+      -0.5f, -0.5f,
+      0.5f, -0.5f,
+      0.5f, 0.5f,
+      -0.5f, 0.5f
+    };
+
+    if (GLEW_VERSION_3_0) {
+      glGenVertexArrays(1, &vertex_array_object);
+      glBindVertexArray(vertex_array_object);
+    }
+
+    Buffer vertex_buffer(GL_ARRAY_BUFFER, vertex_data, sizeof(vertex_data));
+
+    if (GLEW_VERSION_3_0) {
+      vertex_buffer.Bind();
+      glEnableVertexAttribArray(vertex_position_location);
+      glVertexAttribPointer(vertex_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    }
+    
+    GLuint index_data[6] = {
+      0, 1, 2, 0, 2, 3
+    };
+
+    Buffer index_buffer(GL_ELEMENT_ARRAY_BUFFER, index_data, sizeof(index_data));
+    index_buffer.set_count(6);
+    index_buffer.set_type(GL_UNSIGNED_INT);
 
     SDL_Event event;
 
@@ -140,16 +148,22 @@ int main(int argc, char **argv) {
 
       glUniform4f(color_location, color_red, color_green, color_blue, 1.0f);
 
-      glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer_object);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer_object);
+      if (GLEW_VERSION_3_0) {
+        glBindVertexArray(vertex_array_object);
+      } else {
+        vertex_buffer.Bind();
+        glEnableVertexAttribArray(vertex_position_location);
+        glVertexAttribPointer(vertex_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
+      }
 
-      glEnableVertexAttribArray(vertex_position_location);
+      index_buffer.Bind();
+      index_buffer.DrawElements(GL_TRIANGLES);
 
-      glVertexAttribPointer(vertex_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-      glDisableVertexAttribArray(vertex_position_location);
+      if (GLEW_VERSION_3_0) {
+        glBindVertexArray(0);
+      } else {
+        glDisableVertexAttribArray(vertex_position_location);
+      }
 
       glUseProgram(0);
 
