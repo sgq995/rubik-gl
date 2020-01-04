@@ -13,7 +13,7 @@ public:
   bool Attach(const ShaderObject &source);
   bool Link();
 
-  void Bind();
+  void Use();
 
   const GLuint& program() const;
 

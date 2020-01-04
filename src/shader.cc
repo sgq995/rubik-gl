@@ -41,7 +41,7 @@ bool Shader::Link() {
 }
 
 
-void Shader::Bind() {
+void Shader::Use() {
   glUseProgram(program_);
 }
 

@@ -51,14 +51,13 @@ int main(int argc, char **argv) {
   }
 
   {
-    Window::Properties properties = {
+    Window window({
       .title = "RubikGL", 
       .x = SDL_WINDOWPOS_CENTERED,
       .y = SDL_WINDOWPOS_CENTERED,
       .width = 800,
       .height = 600,
-    };
-    Window window(properties);
+    });
     const Renderer &renderer = window.renderer();
 
     Shader shader;
@@ -122,8 +121,6 @@ int main(int argc, char **argv) {
     };
 
     Buffer index_buffer(GL_ELEMENT_ARRAY_BUFFER, index_data, sizeof(index_data));
-    index_buffer.set_count(6);
-    index_buffer.set_type(GL_UNSIGNED_INT);
 
     SDL_Event event;
 
@@ -136,7 +133,7 @@ int main(int argc, char **argv) {
 
       renderer.Clear();
 
-      shader.Bind();
+      shader.Use();
 
       color_red_delta = ADJUST_DELTA(color_red_delta, color_red, 1.0f, 0.0f);
       // color_green_delta = ADJUST_DELTA(color_green_delta, color_green, 1.0f, 0.0f);
@@ -157,7 +154,7 @@ int main(int argc, char **argv) {
       }
 
       index_buffer.Bind();
-      index_buffer.DrawElements(GL_TRIANGLES);
+      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
 
       if (GLEW_VERSION_3_0) {
         glBindVertexArray(0);
