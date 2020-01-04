@@ -20,13 +20,13 @@ public:
   ShaderObjectPool();
   ~ShaderObjectPool();
 
-  bool Compile(const ShaderSource& source);
-  bool Compile(const std::string& file_path);
-  bool Compile(const std::string& key, const ShaderSource& source);
+  bool Compile(const ShaderSource &source);
+  bool Compile(const std::string &file_path);
+  bool Compile(const std::string &key, const ShaderSource &source);
 
-  const ShaderObject& Get(const ShaderSource& source) const;
+  const ShaderObject& Get(const ShaderSource &source) const;
   const ShaderObject& Get(const GLchar *code) const;
-  const ShaderObject& Get(const std::string& key) const;
+  const ShaderObject& Get(const std::string &key) const;
 
   void Clear();
 

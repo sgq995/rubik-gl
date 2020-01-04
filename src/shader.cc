@@ -11,7 +11,7 @@ Shader::~Shader() {
 }
 
 
-bool Shader::Attach(const ShaderObject& object) {
+bool Shader::Attach(const ShaderObject &object) {
   glAttachShader(program_, object.id);
 
   return true;

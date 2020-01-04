@@ -10,7 +10,7 @@ public:
   Shader();
   ~Shader();
 
-  bool Attach(const ShaderObject& source);
+  bool Attach(const ShaderObject &source);
   bool Link();
 
   void Bind();

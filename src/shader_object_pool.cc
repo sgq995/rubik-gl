@@ -12,12 +12,12 @@ ShaderObjectPool::~ShaderObjectPool() {
 }
 
 
-bool ShaderObjectPool::Compile(const ShaderSource& source) {
+bool ShaderObjectPool::Compile(const ShaderSource &source) {
   std::string key(static_cast<const char *>(source.code));
   return Compile(key, source);
 }
 
-bool ShaderObjectPool::Compile(const std::string& file_path) {
+bool ShaderObjectPool::Compile(const std::string &file_path) {
   ShaderSource source;
 
   // TODO: Populate source based on file contents
@@ -25,7 +25,7 @@ bool ShaderObjectPool::Compile(const std::string& file_path) {
   return Compile(file_path, source);
 }
 
-bool ShaderObjectPool::Compile(const std::string& key, const ShaderSource& source) {
+bool ShaderObjectPool::Compile(const std::string &key, const ShaderSource &source) {
   GLuint id = glCreateShader(source.type);
   if (id == 0) {
     return false;
@@ -57,7 +57,7 @@ bool ShaderObjectPool::Compile(const std::string& key, const ShaderSource& sourc
 }
 
 
-const ShaderObject& ShaderObjectPool::Get(const ShaderSource& source) const {
+const ShaderObject& ShaderObjectPool::Get(const ShaderSource &source) const {
   return Get(source.code);
 }
 
@@ -66,7 +66,7 @@ const ShaderObject& ShaderObjectPool::Get(const GLchar *code) const {
   return Get(key);
 }
 
-const ShaderObject& ShaderObjectPool::Get(const std::string& key) const {
+const ShaderObject& ShaderObjectPool::Get(const std::string &key) const {
   if (cache_.find(key) != cache_.end()) {
     return cache_.at(key);
   } else {
