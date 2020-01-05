@@ -45,3 +45,21 @@ void Renderer::Clear() const {
 void Renderer::Render() {
   
 }
+
+void Renderer::DrawArrays(GLenum mode, const Buffer &buffer) const {
+  DrawArrays(mode, 0, buffer);
+}
+
+void Renderer::DrawArrays(GLenum mode, GLint offset, const Buffer &buffer) const {
+  buffer.Bind();
+  glDrawArrays(mode, offset, buffer.count());
+}
+
+void Renderer::DrawElements(GLenum mode, const Buffer &buffer) const {
+  DrawElements(mode, 0, buffer);
+}
+
+void Renderer::DrawElements(GLenum mode, GLint offset, const Buffer &buffer) const {
+  buffer.Bind();
+  glDrawElements(mode, buffer.count(), buffer.type(), reinterpret_cast<const GLvoid*>(offset));
+}

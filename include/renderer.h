@@ -3,6 +3,8 @@
 
 #include <SDL.h>
 
+#include "buffer.h"
+
 class Renderer {
 public:
   Renderer();
@@ -17,6 +19,11 @@ public:
 
   void Clear() const;
   void Render();
+
+  void DrawArrays(GLenum mode, const Buffer &buffer) const;
+  void DrawArrays(GLenum mode, GLint offset, const Buffer &buffer) const;
+  void DrawElements(GLenum mode, const Buffer &buffer) const;
+  void DrawElements(GLenum mode, GLint offset, const Buffer &buffer) const;
 
 private:
   SDL_GLContext gl_context_ = NULL;

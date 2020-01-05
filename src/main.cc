@@ -159,8 +159,7 @@ int main(int argc, char **argv) {
 
       vertex_buffer_layout.Bind();
 
-      index_buffer.Bind();
-      glDrawElements(GL_TRIANGLES, index_buffer.count(), index_buffer.type(), NULL);
+      renderer.DrawElements(GL_TRIANGLES, index_buffer);
 
       GLenum error = glGetError();
       while (error != GL_NO_ERROR) {
