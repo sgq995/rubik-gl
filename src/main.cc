@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "buffer.h"
+#include "buffer_layout.h"
 #include "renderer.h"
 #include "shader.h"
 #include "shader_object_pool.h"
@@ -117,12 +118,8 @@ int main(int argc, char **argv) {
         .size = sizeof(vertex_data) 
     });
 
-    if (GLEW_VERSION_3_0) {
-      vertex_buffer.Bind();
-      glEnableVertexAttribArray(vertex_position_location);
-      // glVertexAttribPointer(vertex_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
-      glVertexAttribPointer(vertex_position_location, vertex_buffer.size(), vertex_buffer.type(), GL_FALSE, 0, 0);
-    }
+    BufferLayout vertex_buffer_layout;
+    vertex_buffer_layout.Attrib(vertex_position_location, vertex_buffer);
     
     GLuint index_data[6] = {
       0, 1, 2, 0, 2, 3
@@ -160,25 +157,10 @@ int main(int argc, char **argv) {
 
       glUniform4f(color_location, color_red, color_green, color_blue, 1.0f);
 
-      if (GLEW_VERSION_3_0) {
-        glBindVertexArray(vertex_array_object);
-      } else {
-        vertex_buffer.Bind();
-        glEnableVertexAttribArray(vertex_position_location);
-        glVertexAttribPointer(vertex_position_location, 2, GL_FLOAT, GL_FALSE, 0, 0);
-      }
+      vertex_buffer_layout.Bind();
 
       index_buffer.Bind();
-      // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
       glDrawElements(GL_TRIANGLES, index_buffer.count(), index_buffer.type(), NULL);
-
-      if (GLEW_VERSION_3_0) {
-        glBindVertexArray(0);
-      } else {
-        glDisableVertexAttribArray(vertex_position_location);
-      }
-
-      glUseProgram(0);
 
       GLenum error = glGetError();
       while (error != GL_NO_ERROR) {
