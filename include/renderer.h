@@ -18,7 +18,6 @@ public:
   void Destroy();
 
   void Clear() const;
-  void Render();
 
   void DrawArrays(GLenum mode, const Buffer &buffer) const;
   void DrawArrays(GLenum mode, GLint offset, const Buffer &buffer) const;
