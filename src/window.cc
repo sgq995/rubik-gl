@@ -2,7 +2,22 @@
 
 #include <iostream>
 
+Window::Window() {
+
+}
+
 Window::Window(const Window::Properties &properties) {
+  Init(properties);
+}
+
+Window::~Window() {
+  renderer_.Destroy();
+
+  SDL_DestroyWindow(window_);
+}
+
+
+bool Window::Init(const Window::Properties &properties) {
   SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
@@ -14,22 +29,16 @@ Window::Window(const Window::Properties &properties) {
       properties.x, properties.y,
       properties.width, properties.height, 
       SDL_WINDOW_OPENGL);
+  if (window_ == NULL) {
+    return window_;
+  }
 
-  renderer_.Create(window_);
-}
-
-Window::~Window() {
-  renderer_.Destroy();
-
-  SDL_DestroyWindow(window_);
+  return renderer_.Create(window_);
 }
 
 
-void Window::Update() {
+void Window::Clear() {
   renderer_.Clear();
-  renderer_.Render();
-
-  SDL_GL_SwapWindow(window_);
 }
 
 void Window::Swap() {

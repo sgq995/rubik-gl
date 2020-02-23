@@ -17,14 +17,17 @@ public:
         int height;
     };
 
-    explicit Window(const Window::Properties &properties);
+    Window();
+    Window(const Window::Properties &properties);
     
     Window(Window&& other) = default;
     Window& operator=(Window&& other) = default;
     
     ~Window();
 
-    void Update();
+    bool Init(const Window::Properties &properties);
+
+    void Clear();
     void Swap();
 
     const Renderer& renderer() const;
