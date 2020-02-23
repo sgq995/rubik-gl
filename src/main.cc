@@ -2,6 +2,10 @@
 
 #include <GL/glew.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <SDL.h>
 
 #include "config.h"
@@ -22,9 +26,9 @@ enum return_code {
   ERR_GLEW_INIT,
 };
 
+static GLint model_view_location = -1;
 static GLint vertex_position_location = -1;
 static GLint color_location = -1;
-static GLuint vertex_array_object = 0;
 
 #define ADJUST_DELTA(delta, val, max, min) \
     ((val) > (max)) ? (-(delta)) : \
@@ -67,9 +71,10 @@ int main(int argc, char **argv) {
       ShaderSource source;
 
       const GLchar *vertex_shader_source = ""
-          "attribute vec4 aVertexPosition;"
+          "uniform mat4 uModelView;"
+          "attribute vec3 aVertexPosition;"
           "void main() {"
-            "gl_Position = aVertexPosition;"
+            "gl_Position = uModelView * vec4(aVertexPosition, 1.0f);"
           "}";
       source.type = GL_VERTEX_SHADER;
       source.code = vertex_shader_source;
@@ -91,11 +96,15 @@ int main(int argc, char **argv) {
       shader.Attach(fragment_object);
       
       if (shader.Link()) {
+        model_view_location = glGetUniformLocation(shader.program(), "uModelView");
         color_location = glGetUniformLocation(shader.program(), "uColor");
 
         vertex_position_location = glGetAttribLocation(shader.program(), "aVertexPosition");
       }
     }
+
+    glm::mat4 model_view = glm::mat4(1.0f);
+    model_view = glm::rotate(model_view, glm::radians(45.0f), glm::vec3(0.0, 0.0, 1.0));
 
     GLfloat vertex_data[8] = {
       -0.5f, -0.5f,
@@ -103,11 +112,6 @@ int main(int argc, char **argv) {
       0.5f, 0.5f,
       -0.5f, 0.5f
     };
-
-    if (GLEW_VERSION_3_0) {
-      glGenVertexArrays(1, &vertex_array_object);
-      glBindVertexArray(vertex_array_object);
-    }
 
     Buffer vertex_buffer({
         .target = GL_ARRAY_BUFFER,
@@ -155,6 +159,7 @@ int main(int argc, char **argv) {
       // color_green = OVERFLOW(color_green + color_green_delta, 1.0f, 0.0f);
       // color_blue = OVERFLOW(color_blue + color_blue_delta, 1.0f, 0.0f);
 
+      glUniformMatrix4fv(model_view_location, 1, GL_FALSE, glm::value_ptr(model_view));
       glUniform4f(color_location, color_red, color_green, color_blue, 1.0f);
 
       vertex_buffer_layout.Bind();
