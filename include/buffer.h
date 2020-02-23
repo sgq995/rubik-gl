@@ -20,9 +20,13 @@ public:
     GLsizeiptr size;
   };
 
+  Buffer();
   Buffer(const Buffer::Properties &props, const Buffer::Pointer &pointer);
   Buffer(const Buffer::Properties &props, const Buffer::Pointer &pointer, GLenum usage);
   ~Buffer();
+
+  void Create(const Buffer::Properties &props, const Buffer::Pointer &pointer);
+  void Create(const Buffer::Properties &props, const Buffer::Pointer &pointer, GLenum usage);
 
   void Bind() const;
 
