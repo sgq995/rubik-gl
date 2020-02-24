@@ -34,7 +34,7 @@ void App::Start() {
     return;
   }
 
-  bool window_status = window_.Init({
+  bool window_status = window_.Create({
       .title = "RubikGL", 
       .x = SDL_WINDOWPOS_CENTERED,
       .y = SDL_WINDOWPOS_CENTERED,

@@ -25,7 +25,7 @@ public:
     
     ~Window();
 
-    bool Init(const Window::Properties &properties);
+    bool Create(const Window::Properties &properties);
 
     void Clear();
     void Swap();

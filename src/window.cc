@@ -7,7 +7,7 @@ Window::Window() {
 }
 
 Window::Window(const Window::Properties &properties) {
-  Init(properties);
+  Create(properties);
 }
 
 Window::~Window() {
@@ -17,7 +17,7 @@ Window::~Window() {
 }
 
 
-bool Window::Init(const Window::Properties &properties) {
+bool Window::Create(const Window::Properties &properties) {
   SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
