@@ -30,6 +30,10 @@ const char *App::GetError() const {
 
 
 void App::Start() {
+  if (system_status_ < 0) {
+    return;
+  }
+
   bool window_status = window_.Init({
       .title = "RubikGL", 
       .x = SDL_WINDOWPOS_CENTERED,
@@ -53,6 +57,7 @@ void App::Run() {
     system_status_ = -1;
     return;
   }
+  shader.Use();
 
   glm::mat4 model_view = glm::mat4(1.0f);
   model_view = glm::rotate(model_view, glm::radians(45.0f), glm::vec3(0.0, 0.0, 1.0));
@@ -92,13 +97,18 @@ void App::Run() {
   const Renderer &renderer = window_.renderer();
 
 #define ADJUST_DELTA(delta, val, max, min) \
-    ((val) > (max)) ? (-(delta)) : \
-    ((val) < (min)) ? (-(delta)) : \
+    ((val) >= (max)) ? (-(delta)) : \
+    ((val) <= (min)) ? (-(delta)) : \
     (delta)
 
 #define OVERFLOW(val, max, min) \
     ((val) > (max)) ? ((val) - (max) + (min)) : \
     ((val) < (min)) ? ((max) - (val) + (min)) : \
+    (val)
+
+#define CLAMP(val, max, min) \
+    ((val) > (max)) ? (max) : \
+    ((val) < (min)) ? (min) : \
     (val)
 
   float color_red = 0.5f;
@@ -108,6 +118,8 @@ void App::Run() {
   float color_red_delta = 0.05f;
   float color_green_delta = 0.03f;
   float color_blue_delta = 0.08f;
+
+  Uint32 change_color_time = SDL_GetTicks();
 
   SDL_Event event;
   while (running_) {
@@ -119,13 +131,17 @@ void App::Run() {
     }
 
     // Update
-    color_red_delta = ADJUST_DELTA(color_red_delta, color_red, 1.0f, 0.0f);
-    // color_green_delta = ADJUST_DELTA(color_green_delta, color_green, 1.0f, 0.0f);
-    // color_blue_delta = ADJUST_DELTA(color_blue_delta, color_blue, 1.0f, 0.0f);
+    if ((SDL_GetTicks() - change_color_time) >= 100) {
+      change_color_time = SDL_GetTicks();
 
-    color_red = OVERFLOW(color_red + color_red_delta, 1.0f, 0.0f);
-    // color_green = OVERFLOW(color_green + color_green_delta, 1.0f, 0.0f);
-    // color_blue = OVERFLOW(color_blue + color_blue_delta, 1.0f, 0.0f);
+      color_red_delta = ADJUST_DELTA(color_red_delta, color_red, 1.0f, 0.0f);
+      color_green_delta = ADJUST_DELTA(color_green_delta, color_green, 1.0f, 0.0f);
+      color_blue_delta = ADJUST_DELTA(color_blue_delta, color_blue, 1.0f, 0.0f);
+
+      color_red = CLAMP(color_red + color_red_delta, 1.0f, 0.0f);
+      color_green = CLAMP(color_green + color_green_delta, 1.0f, 0.0f);
+      color_blue = CLAMP(color_blue + color_blue_delta, 1.0f, 0.0f);
+    }
 
     // Render
     window_.Clear();
@@ -155,31 +171,36 @@ int App::system_status() const {
 
 bool App::InitShader(Shader *shader) {
   ShaderObjectPool object_pool;
-  ShaderSource source;
+  
+  const ShaderSource vertex_shader_source = {
+      .type = GL_VERTEX_SHADER,
+      .code = R"glsl(
+          uniform mat4 uModelView;
+          attribute vec3 aVertexPosition;
+          
+          void main() {
+            gl_Position = uModelView * vec4(aVertexPosition, 1.0f);
+          }
+      )glsl",
+  };
+  object_pool.Compile("vertex", vertex_shader_source);
 
-  const GLchar *vertex_shader_source = ""
-      "uniform mat4 uModelView;"
-      "attribute vec3 aVertexPosition;"
-      "void main() {"
-        "gl_Position = uModelView * vec4(aVertexPosition, 1.0f);"
-      "}";
-  source.type = GL_VERTEX_SHADER;
-  source.code = vertex_shader_source;
-  object_pool.Compile("vertex", source);
+  const ShaderSource fragment_shader_source = {
+      .type = GL_FRAGMENT_SHADER,
+      .code = R"glsl(
+          uniform vec4 uColor;
 
-  const GLchar *fragment_shader_source = ""
-      "uniform vec4 uColor;"
-      "void main() {"
-        "gl_FragColor = uColor;"
-      "}";
-  source.type = GL_FRAGMENT_SHADER;
-  source.code = fragment_shader_source;
-  object_pool.Compile(source);
+          void main() {
+            gl_FragColor = uColor;
+          }
+      )glsl",
+  };
+  object_pool.Compile(fragment_shader_source);
 
   const ShaderObject vertex_object = object_pool.Get("vertex");
   shader->Attach(vertex_object);
 
-  const ShaderObject fragment_object = object_pool.Get(fragment_shader_source);
+  const ShaderObject fragment_object = object_pool.Get(fragment_shader_source.code);
   shader->Attach(fragment_object);
   
   return shader->Link();
