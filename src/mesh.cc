@@ -33,6 +33,12 @@ void Mesh::Draw(const Renderer &renderer) {
   renderer.DrawElements(GL_TRIANGLES, index_buffer_);
 }
 
+void Mesh::Draw(const Renderer &renderer, GLint model_view_location)
+{
+  ::glUniformMatrix4fv(model_view_location, 1, GL_FALSE, model_view_ptr());
+  Draw(renderer);
+}
+
 
 const Buffer& Mesh::vertex_buffer() const {
   return vertex_buffer_;

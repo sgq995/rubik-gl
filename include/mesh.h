@@ -20,6 +20,7 @@ public:
   void Rotate(const glm::f32 &angle, const glm::vec3 &rotation);
 
   virtual void Draw(const Renderer &renderer);
+  virtual void Draw(const Renderer &renderer, GLint model_view_location);
 
   const Buffer& vertex_buffer() const;
   

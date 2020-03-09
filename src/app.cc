@@ -150,11 +150,8 @@ void App::Run() {
 
     glUniform4f(shader.UniformLocation("uColor"), color_red, color_green, color_blue, 1.0f);
 
-    glUniformMatrix4fv(shader.UniformLocation("uModelView"), 1, GL_FALSE, cube.model_view_ptr());
-    cube.Draw(renderer);
-
-    glUniformMatrix4fv(shader.UniformLocation("uModelView"), 1, GL_FALSE, my_cube.model_view_ptr());
-    my_cube.Draw(renderer);
+    cube.Draw(renderer, shader.UniformLocation("uModelView"));
+    my_cube.Draw(renderer, shader.UniformLocation("uModelView"));
 
     GLenum error = glGetError();
     while (error != GL_NO_ERROR) {
