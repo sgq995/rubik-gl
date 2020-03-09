@@ -61,74 +61,6 @@ void App::Run() {
   }
   shader.Use();
 
-  // Buffer index_buffer;
-  {
-    GLuint index_data[36] = {
-      // top
-      3, 2, 6,
-      3, 6, 7,
-
-      // bottom
-      4, 5, 1,
-      4, 1, 0,
-      
-      // front
-      0, 1, 2, 
-      0, 2, 3,
-
-      // back
-      5, 4, 7,
-      5, 7, 6,
-
-      // left
-      4, 0, 3,
-      4, 3, 7,
-
-      // right
-      1, 5, 6,
-      1, 6, 2,
-    };
-
-    Buffer::Properties index_props = {
-        .target = GL_ELEMENT_ARRAY_BUFFER,
-        .type = GL_UNSIGNED_INT,
-        .count = 36,
-    };
-    Buffer::Pointer index_pointer = {
-        .data = index_data,
-        .size = sizeof(index_data),
-    };
-    // index_buffer.Create(index_props, index_pointer);
-  }
-
-  // Buffer vertex_buffer;
-  {
-    GLfloat vertex_data[24] = {
-      -0.5f, -0.5f, 0.5f, 
-      0.5f, -0.5f, 0.5f, 
-      0.5f,  0.5f, 0.5f, 
-      -0.5f,  0.5f, 0.5f, 
-      -0.5f, -0.5f, -0.5f,
-      0.5f, -0.5f, -0.5f,
-      0.5f,  0.5f, -0.5f,
-      -0.5f,  0.5f, -0.5f,
-    };
-
-    Buffer::Properties vertex_props = {
-        .target = GL_ARRAY_BUFFER,
-        .type = GL_FLOAT,
-        .size = 3,
-    };
-    Buffer::Pointer vertex_pointer = {
-        .data = vertex_data,
-        .size = sizeof(vertex_data) 
-    };
-    // vertex_buffer.Create(vertex_props, vertex_pointer);
-  }
-
-  // BufferLayout vertex_buffer_layout;
-  // vertex_buffer_layout.Attrib(shader.AttribLocation("aVertexPosition"), vertex_buffer);
-
   const Renderer &renderer = window_.renderer();
 
 #define ADJUST_DELTA(delta, val, max, min) \
@@ -168,6 +100,12 @@ void App::Run() {
   glm::mat4 model_view = glm::mat4(1.0f);
 
   Cube cube(shader.AttribLocation("aVertexPosition"));
+  cube.Translate(glm::vec3(-0.5f, 0.0f, 0.0f));
+  cube.Scale(glm::vec3(0.3f, 0.3f, 0.3f));
+
+  Cube my_cube(shader.AttribLocation("aVertexPosition"));
+  my_cube.Translate(glm::vec3(0.5f, 0.0f, 0.0f));
+  my_cube.Scale(glm::vec3(0.3f, 0.3f, 0.3f));
 
   SDL_Event event;
   while (running_) {
@@ -203,23 +141,24 @@ void App::Run() {
       coord_z = CLAMP(coord_z + coord_z_delta, 1.0, -1.0);
     }
 
-    model_view = glm::rotate(model_view, glm::radians(1.0f), glm::vec3(coord_x, coord_y, coord_z));
-
+    cube.Rotate(glm::radians(1.0f), glm::vec3(coord_x, coord_y, coord_z));
+    my_cube.Rotate(glm::radians(-1.0f), glm::vec3(coord_x, coord_y, coord_z));
+    
     // Render
     window_.Clear();
     shader.Use();
 
-    glUniformMatrix4fv(shader.UniformLocation("uModelView"), 1, GL_FALSE, glm::value_ptr(model_view));
     glUniform4f(shader.UniformLocation("uColor"), color_red, color_green, color_blue, 1.0f);
 
+    glUniformMatrix4fv(shader.UniformLocation("uModelView"), 1, GL_FALSE, cube.model_view_ptr());
     cube.Draw(renderer);
 
-    // vertex_buffer_layout.Bind();
+    glUniformMatrix4fv(shader.UniformLocation("uModelView"), 1, GL_FALSE, my_cube.model_view_ptr());
+    my_cube.Draw(renderer);
 
-    // renderer.DrawElements(GL_TRIANGLES, index_buffer);
     GLenum error = glGetError();
     while (error != GL_NO_ERROR) {
-      std::cerr << "[OpenGL] Error code (" << error << ')' << std::endl;
+      std::cerr << "[OpenGL] Error code (" << error << ")" << std::endl;
       error = glGetError();
     }
 
