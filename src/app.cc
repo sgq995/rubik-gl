@@ -12,6 +12,7 @@
 
 #include "buffer.h"
 #include "buffer_layout.h"
+#include "cube.h"
 #include "shader.h"
 #include "window.h"
 
@@ -34,13 +35,14 @@ void App::Start() {
     return;
   }
 
-  bool window_status = window_.Create({
-      .title = "RubikGL", 
+  const Window::Properties props = {
+      .title = "This is not RubikGL", 
       .x = SDL_WINDOWPOS_CENTERED,
       .y = SDL_WINDOWPOS_CENTERED,
       .width = 800,
       .height = 600,
-  });
+  };
+  bool window_status = window_.Create(props);
   if (!window_status) {
     system_status_ = -1;
     return;
@@ -59,40 +61,73 @@ void App::Run() {
   }
   shader.Use();
 
-  glm::mat4 model_view = glm::mat4(1.0f);
-  model_view = glm::rotate(model_view, glm::radians(45.0f), glm::vec3(0.0, 0.0, 1.0));
+  // Buffer index_buffer;
+  {
+    GLuint index_data[36] = {
+      // top
+      3, 2, 6,
+      3, 6, 7,
 
-  GLfloat vertex_data[8] = {
-    -0.5f, -0.5f,
-    0.5f, -0.5f,
-    0.5f, 0.5f,
-    -0.5f, 0.5f
-  };
+      // bottom
+      4, 5, 1,
+      4, 1, 0,
+      
+      // front
+      0, 1, 2, 
+      0, 2, 3,
 
-  Buffer vertex_buffer({
-      .target = GL_ARRAY_BUFFER,
-      .type = GL_FLOAT,
-      .size = 2,
-  }, {
-      .data = vertex_data, 
-      .size = sizeof(vertex_data) 
-  });
+      // back
+      5, 4, 7,
+      5, 7, 6,
 
-  BufferLayout vertex_buffer_layout;
-  vertex_buffer_layout.Attrib(shader.AttribLocation("aVertexPosition"), vertex_buffer);
-  
-  GLuint index_data[6] = {
-    0, 1, 2, 0, 2, 3
-  };
+      // left
+      4, 0, 3,
+      4, 3, 7,
 
-  Buffer index_buffer({
-      .target = GL_ELEMENT_ARRAY_BUFFER,
-      .type = GL_UNSIGNED_INT,
-      .count = 6,
-  }, {
-      .data = index_data,
-      .size = sizeof(index_data),
-  });
+      // right
+      1, 5, 6,
+      1, 6, 2,
+    };
+
+    Buffer::Properties index_props = {
+        .target = GL_ELEMENT_ARRAY_BUFFER,
+        .type = GL_UNSIGNED_INT,
+        .count = 36,
+    };
+    Buffer::Pointer index_pointer = {
+        .data = index_data,
+        .size = sizeof(index_data),
+    };
+    // index_buffer.Create(index_props, index_pointer);
+  }
+
+  // Buffer vertex_buffer;
+  {
+    GLfloat vertex_data[24] = {
+      -0.5f, -0.5f, 0.5f, 
+      0.5f, -0.5f, 0.5f, 
+      0.5f,  0.5f, 0.5f, 
+      -0.5f,  0.5f, 0.5f, 
+      -0.5f, -0.5f, -0.5f,
+      0.5f, -0.5f, -0.5f,
+      0.5f,  0.5f, -0.5f,
+      -0.5f,  0.5f, -0.5f,
+    };
+
+    Buffer::Properties vertex_props = {
+        .target = GL_ARRAY_BUFFER,
+        .type = GL_FLOAT,
+        .size = 3,
+    };
+    Buffer::Pointer vertex_pointer = {
+        .data = vertex_data,
+        .size = sizeof(vertex_data) 
+    };
+    // vertex_buffer.Create(vertex_props, vertex_pointer);
+  }
+
+  // BufferLayout vertex_buffer_layout;
+  // vertex_buffer_layout.Attrib(shader.AttribLocation("aVertexPosition"), vertex_buffer);
 
   const Renderer &renderer = window_.renderer();
 
@@ -119,7 +154,20 @@ void App::Run() {
   float color_green_delta = 0.03f;
   float color_blue_delta = 0.08f;
 
+  double coord_x = 0.25;
+  double coord_y = 0.5;
+  double coord_z = 1.0;
+
+  double coord_x_delta = 0.025;
+  double coord_y_delta = 0.025;
+  double coord_z_delta = 0.025;
+
   Uint32 change_color_time = SDL_GetTicks();
+  Uint32 change_rotation_vector_time = SDL_GetTicks();
+
+  glm::mat4 model_view = glm::mat4(1.0f);
+
+  Cube cube(shader.AttribLocation("aVertexPosition"));
 
   SDL_Event event;
   while (running_) {
@@ -143,6 +191,20 @@ void App::Run() {
       color_blue = CLAMP(color_blue + color_blue_delta, 1.0f, 0.0f);
     }
 
+    if ((SDL_GetTicks() - change_rotation_vector_time) >= 50) {
+      change_rotation_vector_time = SDL_GetTicks();
+
+      coord_x_delta = ADJUST_DELTA(coord_x_delta, coord_x, 1.0, -1.0);
+      coord_y_delta = ADJUST_DELTA(coord_y_delta, coord_y, 1.0, -1.0);
+      coord_z_delta = ADJUST_DELTA(coord_z_delta, coord_z, 1.0, -1.0);
+
+      coord_x = CLAMP(coord_x + coord_x_delta, 1.0, -1.0);
+      coord_y = CLAMP(coord_y + coord_y_delta, 1.0, -1.0);
+      coord_z = CLAMP(coord_z + coord_z_delta, 1.0, -1.0);
+    }
+
+    model_view = glm::rotate(model_view, glm::radians(1.0f), glm::vec3(coord_x, coord_y, coord_z));
+
     // Render
     window_.Clear();
     shader.Use();
@@ -150,9 +212,11 @@ void App::Run() {
     glUniformMatrix4fv(shader.UniformLocation("uModelView"), 1, GL_FALSE, glm::value_ptr(model_view));
     glUniform4f(shader.UniformLocation("uColor"), color_red, color_green, color_blue, 1.0f);
 
-    vertex_buffer_layout.Bind();
+    cube.Draw(renderer);
 
-    renderer.DrawElements(GL_TRIANGLES, index_buffer);
+    // vertex_buffer_layout.Bind();
+
+    // renderer.DrawElements(GL_TRIANGLES, index_buffer);
     GLenum error = glGetError();
     while (error != GL_NO_ERROR) {
       std::cerr << "[OpenGL] Error code (" << error << ')' << std::endl;
@@ -176,9 +240,14 @@ bool App::InitShader(Shader *shader) {
       .type = GL_VERTEX_SHADER,
       .code = R"glsl(
           uniform mat4 uModelView;
+
           attribute vec3 aVertexPosition;
           
+          varying vec3 vVertexPosition;
+
           void main() {
+            vVertexPosition = aVertexPosition;
+
             gl_Position = uModelView * vec4(aVertexPosition, 1.0f);
           }
       )glsl",
@@ -190,8 +259,13 @@ bool App::InitShader(Shader *shader) {
       .code = R"glsl(
           uniform vec4 uColor;
 
+          varying vec3 vVertexPosition;
+
           void main() {
-            gl_FragColor = uColor;
+            // gl_FragColor = uColor;
+            // gl_FragColor = vec4(1);
+            vec4 color = vec4(vVertexPosition + vec3(0.65, 0.65, 0.65), 1.0);
+            gl_FragColor = color;
           }
       )glsl",
   };
