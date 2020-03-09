@@ -2,7 +2,11 @@
 
 #include <iostream>
 
+namespace {
+
 const GLenum kDefaultUsage = GL_STATIC_DRAW;
+
+};
 
 Buffer::Buffer()
    : target_(0), type_(0), count_(0) {
